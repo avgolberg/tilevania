@@ -22,3 +22,6 @@ UserSettings/
 
 .vs/
 .vscode/
+
+Assets/_Recovery/
+Assets/*Recovery*
