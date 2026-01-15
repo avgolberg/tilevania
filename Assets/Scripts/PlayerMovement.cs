@@ -78,9 +78,9 @@ public class PlayerMovement : MonoBehaviour
         bool isClimbing = Mathf.Abs(rb.linearVelocity.y) > Mathf.Epsilon;
         animator.SetBool("isClimbing", isClimbing);
     }
-
+ 
     void Die() {
-        if (bodyCollider.IsTouchingLayers(LayerMask.GetMask("Enemy")))
+        if (bodyCollider.IsTouchingLayers(LayerMask.GetMask("Enemy")) || feetCollider.IsTouchingLayers(LayerMask.GetMask("Hazards")))
         {
             animator.SetTrigger("Dying");
             rb.linearVelocity = deathKick;
