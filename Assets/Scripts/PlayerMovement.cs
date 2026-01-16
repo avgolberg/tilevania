@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -7,6 +8,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float climbSpeed = 5f;
     [SerializeField] float jumpSpeed = 25f;
     [SerializeField] Vector2 deathKick = new Vector2(10f, 20f);
+
+    [SerializeField] GameObject bullet;
+    [SerializeField] Transform gun;
 
     Vector2 moveInput;
     Rigidbody2D rb;
@@ -45,6 +49,12 @@ public class PlayerMovement : MonoBehaviour
         if (!feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground"))) return;
         if (value.isPressed)
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y + jumpSpeed);
+    }
+
+    void OnAttack(InputValue value)
+    {
+        if (!isAlive) { return; }
+        Instantiate(bullet, gun.position, transform.rotation);
     }
 
     void Run()
