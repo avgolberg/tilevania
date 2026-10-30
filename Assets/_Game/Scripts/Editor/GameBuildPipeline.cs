@@ -117,7 +117,6 @@ namespace TileVania.EditorTools
             var stars = MakeSprite("Stars", Bg("stars"), new Vector2(0, 4), "Background", -100, new Color(0.7f, 0.75f, 1f, 0.6f));
             stars.GetComponent<SpriteRenderer>().drawMode = SpriteDrawMode.Tiled;
             stars.GetComponent<SpriteRenderer>().size = new Vector2(40, 16);
-            MakeSprite("Moon", Bg("moon"), new Vector2(9f, 9f), "Background", -95, Color.white);
             var far = MakeSprite("Mountains", Bg("mountain_large_blue"), new Vector2(0, 0.5f), "Background", -90, new Color(0.62f, 0.68f, 0.88f));
             far.GetComponent<SpriteRenderer>().drawMode = SpriteDrawMode.Tiled;
             far.GetComponent<SpriteRenderer>().size = new Vector2(40, 12);
@@ -224,27 +223,67 @@ namespace TileVania.EditorTools
         public static void CaptureScreenshots()
         {
             Directory.CreateDirectory("Docs/Screenshots");
-            Capture(SceneLoader.MainMenu, new[] { new Vector2(0f, 6.75f) });
-            Capture(SceneLoader.Level1, new[] { new Vector2(12, 12), new Vector2(48, 14), new Vector2(96, 6.75f), new Vector2(116, 6.75f) });
-            Capture(SceneLoader.Level2, new[] { new Vector2(12, 6.75f), new Vector2(50, 8), new Vector2(68, 15), new Vector2(92, 8), new Vector2(128, 8) });
-            Capture(SceneLoader.Boss, new[] { new Vector2(12, 7), new Vector2(26, 10) });
+            Capture(SceneLoader.MainMenu, "", new[] { new Vector2(0f, 6.75f) });
+            Capture(SceneLoader.MainMenu, "_credits", new[] { new Vector2(0f, 6.75f) }, () => ShowOnly("CreditsPanel", "MainPanel"));
+            Capture(SceneLoader.Level1, "", new[] { new Vector2(12, 12), new Vector2(48, 14), new Vector2(96, 6.75f), new Vector2(116, 6.75f) }, ShowHud);
+            Capture(SceneLoader.Level1, "_pause", new[] { new Vector2(12, 12) }, () => ShowOnly("PausePanel"));
+            Capture(SceneLoader.Level2, "", new[] { new Vector2(12, 6.75f), new Vector2(50, 8), new Vector2(68, 15), new Vector2(92, 8), new Vector2(128, 8) }, ShowHud);
+            Capture(SceneLoader.Boss, "", new[] { new Vector2(12, 7), new Vector2(26, 10) }, () =>
+            {
+                ShowHud();
+                Find("BossBar").SetActive(true);
+                var boss = Object.FindFirstObjectByType<DragonBoss>(FindObjectsInactive.Include);
+                boss.transform.position = new Vector3(28f, 12f, 0f);
+            });
+            Capture(SceneLoader.Boss, "_victory", new[] { new Vector2(26, 10) }, () => ShowOnly("VictoryPanel"));
         }
 
-        static void Capture(string sceneName, Vector2[] positions)
+        static GameObject Find(string name) =>
+            Resources.FindObjectsOfTypeAll<GameObject>().First(g => g.name == name && g.scene.IsValid());
+
+        static void ShowHud()
+        {
+            var hud = Object.FindFirstObjectByType<HUD>();
+            hud.titleGroup.alpha = 0f;
+            hud.messageGroup.alpha = 1f;
+            hud.messageText.text = "Found the Gold Key! It opens a locked gate.";
+            hud.goldKeyIcon.SetActive(true);
+            hud.treasureKeyIcon.SetActive(false);
+            hud.gemText.text = "12";
+        }
+
+        static void ShowOnly(string show, string hide = null)
+        {
+            Find(show).SetActive(true);
+            if (hide != null) Find(hide).SetActive(false);
+        }
+
+        static void Capture(string sceneName, string suffix, Vector2[] positions, System.Action setup = null)
         {
             EditorSceneManager.OpenScene($"{LevelBuilder.Scenes}/{sceneName}.unity", OpenSceneMode.Single);
             var cam = Camera.main;
+            setup?.Invoke();
+            // Overlay canvases don't render into a camera; switch them for the capture only (scene is not saved).
+            foreach (var c in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            {
+                c.renderMode = RenderMode.ScreenSpaceCamera;
+                c.worldCamera = cam;
+                c.planeDistance = 1f;
+                c.sortingLayerName = "Foreground";
+                c.sortingOrder = 1000;
+            }
             var rt = new RenderTexture(1920, 1080, 24);
             var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
             for (int i = 0; i < positions.Length; i++)
             {
                 cam.transform.position = new Vector3(positions[i].x, positions[i].y, -10f);
                 cam.targetTexture = rt;
+                Canvas.ForceUpdateCanvases();
                 cam.Render();
                 RenderTexture.active = rt;
                 tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
                 tex.Apply();
-                File.WriteAllBytes($"Docs/Screenshots/{sceneName}_{i}.png", tex.EncodeToPNG());
+                File.WriteAllBytes($"Docs/Screenshots/{sceneName}{suffix}_{i}.png", tex.EncodeToPNG());
             }
             cam.targetTexture = null;
             RenderTexture.active = null;

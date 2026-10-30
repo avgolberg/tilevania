@@ -145,6 +145,9 @@ namespace TileVania.EditorTools
                     if (ch == '#')
                     {
                         ground.SetTile(cell, TileFor(GroundSprite(L, x, y, castle, rng), Tile.ColliderType.Grid));
+                        // Underside tiles have a jagged transparent edge; fill behind them so the sky never shows through.
+                        if (!castle && y > 0 && !L.Solid(x, y - 1) && L.roofBackwall)
+                            back.SetTile(cell, TileFor(F("Fill_" + rng.Next(5))));
                         if (castle && !L.Solid(x, y + 1) && y + 1 < L.h)
                             front.SetTile(new Vector3Int(x, y + 1, 0), TileFor(C("Cap_" + (x & 1))));
                         continue;
@@ -237,7 +240,7 @@ namespace TileVania.EditorTools
                         case 'p':
                         {
                             int top = y + 1;
-                            while (top < L.h && !L.Solid(x, top)) top++;
+                            while (top < L.h && !L.Solid(x, top) && !L.OneWay(x, top)) top++;
                             var sp = Place("Enemy_Spider", new Vector2(x + 0.5f, top), "Enemies");
                             sp.transform.Find("Body").localPosition = new Vector3(0f, c.y - top, 0f);
                             break;
@@ -443,7 +446,6 @@ namespace TileVania.EditorTools
             else
             {
                 Layer("Stars", Bg("stars"), new Vector2(0.97f, 0.97f), cy - 2f, -100, new Color(0.7f, 0.75f, 1f, 0.6f), true);
-                Layer("Moon", Bg("moon"), new Vector2(0.98f, 0.98f), cy + 2.5f, -95, Color.white, false, 8f);
                 var cloud = ArtSetup.GetSprite("Environment/Forest/Forest_clouds.png", "Cloud_Light");
                 for (int i = 0; i < 6; i++)
                     Layer("Cloud" + i, cloud, new Vector2(0.9f, 0.92f), cy + 3f + (i % 3) * 1.2f, -92, new Color(0.75f, 0.8f, 0.95f, 0.8f), false, -10f + i * 9f);

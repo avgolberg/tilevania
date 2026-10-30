@@ -14,7 +14,7 @@ namespace TileVania
     public class DragonBoss : MonoBehaviour, IDamageable
     {
         public string displayName = "Guardian of the Treasure";
-        public int maxHealth = 36;
+        public int maxHealth = 30;
         public AudioClip bossMusic;
 
         [Header("References")]
@@ -100,7 +100,7 @@ namespace TileVania
         IEnumerator FightLoop()
         {
             // Intro: swoop in and roar
-            yield return MoveTo(new Vector3((arenaLeft + arenaRight) * 0.5f, ceilingY - 4f), 1.4f);
+            yield return MoveTo(new Vector3((arenaLeft + arenaRight) * 0.5f, floorY + 8f), 1.4f);
             SetVulnerable(true);
             AudioManager.Play(Sfx.BossWarning);
             CameraController.Shake(0.35f, 0.8f);
@@ -124,8 +124,9 @@ namespace TileVania
 
         IEnumerator FireVolley()
         {
-            float side = player != null && player.position.x > (arenaLeft + arenaRight) * 0.5f ? arenaLeft + 4f : arenaRight - 4f;
-            yield return MoveTo(new Vector3(side, floorY + 5.5f), 0.9f);
+            float side = player != null && player.position.x > (arenaLeft + arenaRight) * 0.5f ? arenaLeft + 2.5f : arenaRight - 2.5f;
+            // level with the side platforms so the player can hit it with straight shots
+            yield return MoveTo(new Vector3(side, floorY + 3.2f), 0.9f);
             int volleys = enraged ? 2 : 1;
             for (int v = 0; v < volleys; v++)
             {
@@ -178,12 +179,13 @@ namespace TileVania
                 }
             }
             yield return new WaitForSeconds(enraged ? 0.6f : 0.9f);
-            yield return MoveTo(new Vector3(targetX, ceilingY - 4f), 0.8f);
+            yield return MoveTo(new Vector3(targetX, floorY + 8f), 0.8f);
         }
 
         IEnumerator FireRain()
         {
-            yield return MoveTo(new Vector3((arenaLeft + arenaRight) * 0.5f, ceilingY - 3f), 0.9f);
+            // level with the top platform so the player can punish the attack
+            yield return MoveTo(new Vector3((arenaLeft + arenaRight) * 0.5f, floorY + 8.5f), 0.9f);
             AudioManager.Play(Sfx.BossWarning);
             CameraController.Shake(0.2f, 0.6f);
 

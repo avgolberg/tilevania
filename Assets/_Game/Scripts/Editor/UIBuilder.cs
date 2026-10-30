@@ -249,6 +249,14 @@ namespace TileVania.EditorTools
             menus.victoryStats.gameObject.AddComponent<LayoutElement>().preferredHeight = 150;
             menus.victoryMenuButton = MakeButton(victory, "Main Menu");
 
+            // Saved hidden so the scene view stays clean; HUD/GameMenus also hide them at runtime.
+            menus.pausePanel.SetActive(false);
+            menus.deathPanel.SetActive(false);
+            menus.victoryPanel.SetActive(false);
+            hud.bossBarRoot.SetActive(false);
+            hud.titleGroup.alpha = 0f;
+            hud.messageGroup.alpha = 0f;
+
             string path = ContentBuilder.Prefabs + "/GameCanvas.prefab";
             PrefabUtility.SaveAsPrefabAsset(canvas, path);
             Object.DestroyImmediate(canvas);
@@ -298,6 +306,9 @@ namespace TileVania.EditorTools
                 26, Text, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 520), TextAlignmentOptions.TopLeft);
             text.gameObject.AddComponent<LayoutElement>().preferredHeight = 520;
             controller.creditsBackButton = MakeButton(credits, "Back");
+
+            controller.settingsPanel.SetActive(false);
+            controller.creditsPanel.SetActive(false);
 
             Label(canvas, "Hint", "Move: A/D or Arrows   Jump: Space   Shoot: J / X / Left Click   Climb: W/S   Pause: Esc",
                 24, Text * new Color(1, 1, 1, 0.7f), new Vector2(0.5f, 0f), new Vector2(0, 30), new Vector2(1800, 40));

@@ -270,16 +270,20 @@ namespace TileVania
             if (shootTimer > 0f || IsClimbing || projectilePrefab == null) return;
             shootTimer = shootCooldown;
             attackAnimTimer = 0.25f;
-            Vector2 spawn = (Vector2)transform.position + new Vector2(muzzleOffset.x * Facing, muzzleOffset.y);
+            // Hold Up to shoot straight up (useful against flying enemies and the boss).
+            bool up = input.y > 0.5f;
+            Vector2 dir = up ? Vector2.up : new Vector2(Facing, 0f);
+            Vector2 origin = (Vector2)transform.position + new Vector2(0f, up ? 1.2f : muzzleOffset.y);
+            Vector2 spawn = up ? origin + Vector2.up * 0.5f : origin + new Vector2(muzzleOffset.x * Facing, 0f);
             AudioManager.Play(Sfx.Shoot);
             // Never spawn inside a wall (or behind it): just show a spark when point-blank against one.
-            if (Physics2D.Linecast((Vector2)transform.position + new Vector2(0f, muzzleOffset.y), spawn, Layers.SolidMask))
+            if (Physics2D.Linecast(origin, spawn, Layers.SolidMask))
             {
-                Fx.Burst(spawn - new Vector2(0.3f * Facing, 0f), new Color(0.8f, 0.9f, 1f), 5, 2.5f, 0.2f, 0f, 1.5f);
+                Fx.Burst(origin + dir * 0.3f, new Color(0.8f, 0.9f, 1f), 5, 2.5f, 0.2f, 0f, 1.5f);
                 return;
             }
             var p = Instantiate(projectilePrefab, spawn, Quaternion.identity);
-            p.Launch(new Vector2(Facing, 0f));
+            p.Launch(dir);
         }
 
         void OnJumped()

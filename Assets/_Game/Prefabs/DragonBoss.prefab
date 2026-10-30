@@ -137,7 +137,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TileVania.Runtime::TileVania.DragonBoss
   displayName: Guardian of the Treasure
-  maxHealth: 36
+  maxHealth: 30
   bossMusic: {fileID: 8300000, guid: def6df96cad83c449af7417ed51102c1, type: 3}
   visual: {fileID: 6298398255053358075}
   spriteRenderer: {fileID: 1368615372554622229}

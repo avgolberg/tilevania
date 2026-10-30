@@ -117,6 +117,21 @@ namespace TileVania.Tests
         }
 
         [UnityTest]
+        public IEnumerator Shooting_UpWhileHoldingUp()
+        {
+            yield return Load(SceneLoader.Level1);
+            Move(0f, 1f);
+            GameInput.Simulated.ShootPressed = true;
+            yield return null;
+            yield return null;
+            Move(0f);
+            var proj = Object.FindFirstObjectByType<Projectile>();
+            Assert.IsNotNull(proj);
+            Assert.Greater(proj.GetComponent<Rigidbody2D>().linearVelocity.y, 10f, "projectile should travel upward");
+            Assert.Greater(proj.transform.position.y, player.transform.position.y + 1.4f);
+        }
+
+        [UnityTest]
         public IEnumerator Shooting_FromBehind_KillsSkeleton()
         {
             yield return Load(SceneLoader.Level1);
@@ -265,6 +280,29 @@ namespace TileVania.Tests
             yield return TeleportAndSettle(chest.transform.position + Vector3.up * 0.1f);
             yield return new WaitForSeconds(3.5f);
             Assert.IsNotNull(GameObject.Find("VictoryPanel"), "victory screen after claiming the treasure");
+        }
+
+        [UnityTest]
+        public IEnumerator Boss_IsHittableWithRealShots()
+        {
+            yield return Load(SceneLoader.Boss);
+            var boss = Object.FindFirstObjectByType<DragonBoss>();
+            var health = player.GetComponent<PlayerHealth>();
+            yield return TeleportAndSettle(new Vector2(12.5f, 3f));
+            yield return new WaitForSeconds(2.3f);
+            float shootTimer = 0f;
+            for (float t = 0; t < 30f && !boss.IsDead; t += Time.deltaTime)
+            {
+                health.Heal(3); // the test measures hittability, not dodging
+                float dx = boss.transform.position.x - player.transform.position.x;
+                Move(Mathf.Abs(dx) > 0.8f ? Mathf.Sign(dx) : 0f, 1f);
+                shootTimer -= Time.deltaTime;
+                if (shootTimer <= 0f) { GameInput.Simulated.ShootPressed = true; shootTimer = 0.32f; }
+                yield return null;
+            }
+            Move(0f);
+            Debug.Log($"[Test] boss health after 30s of upward fire: {boss.Health}/{boss.maxHealth}");
+            Assert.LessOrEqual(boss.Health, boss.maxHealth - 10, "the boss should regularly be in range of upward shots");
         }
 
         [UnityTest]
