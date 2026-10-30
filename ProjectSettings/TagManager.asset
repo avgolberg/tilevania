@@ -16,12 +16,12 @@ TagManager:
   - Ladder
   - Player
   - Background
-  - Bouncing
+  - OneWay
   - Enemy
   - Hazards
-  - Bullets
+  - PlayerProjectile
   - Interactables
-  - 
+  - EnemyProjectile
   - 
   - 
   - 
@@ -65,6 +65,12 @@ TagManager:
     locked: 0
   - name: Player
     uniqueID: 718343075
+    locked: 0
+  - name: FX
+    uniqueID: 1910301108
+    locked: 0
+  - name: Foreground
+    uniqueID: 812909395
     locked: 0
   m_RenderingLayers:
   - Default
