@@ -130,7 +130,7 @@ def level2():
     m.rect(0, 0, 0, 33); m.rect(139, 0, 139, 33)
     m.rect(1, 0, 39, 2)
     m.put(3, 3, 'P')
-    m.put(2, 6, 't'); m.put(12, 6, 't'); m.put(7, 6, 'w')
+    m.put(2, 6, 't'); m.put(12, 6, 't'); m.put(7, 8, 'w')
     for x in (8, 9, 10): m.put(x, 3, 'g')
     m.row(5, 8, 5, '='); m.put(6, 6, 'g'); m.put(7, 6, 'g')
     # spike hall with wooden bridges
@@ -182,7 +182,7 @@ def level2():
     m.put(116, 3, 's'); m.put(122, 3, 's')
     m.put(119, 10, 'o')
     m.row(115, 119, 5, '='); m.put(116, 6, 'g'); m.put(117, 6, 'g'); m.put(118, 6, 'h')
-    m.put(112, 6, 't'); m.put(124, 6, 't'); m.put(118, 5, 'w')
+    m.put(112, 6, 't'); m.put(124, 6, 't'); m.put(118, 9, 'w')
     m.rect(126, 5, 127, 33)
     m.put(126, 3, 'D')
     m.put(132, 3, 'E')

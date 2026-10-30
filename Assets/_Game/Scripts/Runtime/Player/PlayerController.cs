@@ -26,6 +26,8 @@ namespace TileVania
         public float maxFallSpeed = 22f;
         public float coyoteTime = 0.1f;
         public float jumpBufferTime = 0.12f;
+        [Tooltip("Up-arrow jumps wait this long so Up + X can fire upward without jumping.")]
+        public float upJumpGrace = 0.09f;
 
         [Header("Climb")]
         public float climbSpeed = 4.5f;
@@ -50,7 +52,7 @@ namespace TileVania
 
         Rigidbody2D rb;
         Vector2 input;
-        float lastGroundedTime = -10f, lastJumpPressedTime = -10f;
+        float lastGroundedTime = -10f, lastJumpPressedTime = -10f, jumpOriginTime = -10f, pendingUpJump = -1f;
         float shootTimer, attackAnimTimer, knockbackTimer, dropThroughTimer, hurtAnimTimer;
         bool jumpHeld, wasGrounded;
         int currentAnim;
@@ -113,8 +115,7 @@ namespace TileVania
             {
                 input = GameInput.Move;
                 jumpHeld = GameInput.JumpHeld;
-                if (GameInput.JumpPressed) lastJumpPressedTime = Time.time;
-                if (GameInput.ShootPressed) TryShoot();
+                ReadActions();
                 if (knockbackTimer <= 0f && Mathf.Abs(input.x) > 0.2f && !IsClimbing) SetFacing((int)Mathf.Sign(input.x));
                 UpdateLadder();
             }
@@ -125,6 +126,44 @@ namespace TileVania
             }
 
             UpdateVisual(dt);
+        }
+
+        /// <summary>
+        /// Resolves the context-sensitive keyboard actions:
+        ///  - Up arrow on a ladder climbs instead of jumping.
+        ///  - Up arrow elsewhere jumps after a tiny grace period; pressing X in that window
+        ///    (Up + X) fires upward and cancels the jump.
+        ///  - Z / Space always jump immediately (Down + Z / Space drops through one-way ledges).
+        /// </summary>
+        void ReadActions()
+        {
+            if (GameInput.UpJumpPressed)
+            {
+                if (IsClimbing) { } // Up just keeps climbing
+                else if (FindLadderColumn(BodyProbe(), out _)) StartClimbing();
+                else pendingUpJump = Time.time;
+            }
+
+            if (GameInput.ShootPressed)
+            {
+                bool aimUp = input.y > 0.5f;
+                if (aimUp && pendingUpJump >= 0f) pendingUpJump = -1f; // Up + X: aim, do not jump
+                TryShoot(aimUp);
+            }
+
+            if (pendingUpJump >= 0f && (Time.time - pendingUpJump >= upJumpGrace || input.y <= 0.5f))
+            {
+                RequestJump(pendingUpJump);
+                pendingUpJump = -1f;
+            }
+
+            if (GameInput.JumpPressed) RequestJump(Time.time);
+        }
+
+        void RequestJump(float pressTime)
+        {
+            lastJumpPressedTime = Time.time;
+            jumpOriginTime = pressTime;
         }
 
         void FixedUpdate()
@@ -162,7 +201,7 @@ namespace TileVania
 
             // Jump (buffered + coyote time); Down + Jump on a one-way platform drops through it
             bool buffered = Time.time - lastJumpPressedTime <= jumpBufferTime;
-            bool canJump = Time.time - lastGroundedTime <= coyoteTime;
+            bool canJump = lastGroundedTime >= jumpOriginTime - coyoteTime;
             if (buffered && canJump && ControlEnabled)
             {
                 lastJumpPressedTime = -10f;
@@ -219,33 +258,72 @@ namespace TileVania
             return Physics2D.OverlapBox((Vector2)transform.position + new Vector2(0f, -0.03f), new Vector2(0.55f, 0.08f), 0f, 1 << Layers.OneWay) != null;
         }
 
+        const float LadderGrabTolerance = 0.3f; // how far the body centre may be from a ladder column
+
+        Vector2 BodyProbe() => (Vector2)transform.position + new Vector2(0f, 0.7f);
+        Vector2 FeetProbe() => (Vector2)transform.position + new Vector2(0f, -0.3f);
+        const float FeetProbeHeight = 0.4f; // only looks below the feet
+
+        /// <summary>Finds a ladder column overlapping the probe, allowing a little horizontal slack.</summary>
+        static bool FindLadderColumn(Vector2 probe, out float columnX, float height = 1.0f)
+        {
+            foreach (float dx in new[] { 0f, -LadderGrabTolerance, LadderGrabTolerance })
+            {
+                // Ladders are one tile wide on an integer grid: test the candidate column at its centre.
+                float cx = Mathf.Floor(probe.x + dx) + 0.5f;
+                if (Physics2D.OverlapBox(new Vector2(cx, probe.y), new Vector2(0.05f, height), 0f, Layers.LadderMask) != null)
+                {
+                    columnX = cx;
+                    return true;
+                }
+            }
+            columnX = 0f;
+            return false;
+        }
+
         void UpdateLadder()
         {
             Vector2 pos = transform.position;
-            bool bodyOnLadder = Physics2D.OverlapBox(pos + new Vector2(0f, 0.7f), new Vector2(0.3f, 1.2f), 0f, Layers.LadderMask) != null;
-            bool ladderBelow = Physics2D.OverlapPoint(pos + new Vector2(0f, -0.3f), Layers.LadderMask) != null;
 
             if (!IsClimbing)
             {
                 if (knockbackTimer > 0f) return;
-                bool up = input.y > 0.5f && bodyOnLadder;
-                bool down = input.y < -0.5f && ladderBelow && IsGrounded;
-                if (up || down) StartClimbing();
+                // Down: from the top of a ladder (standing on it) or while overlapping one.
+                bool down = input.y < -0.5f && (IsGrounded ? FindLadderColumn(FeetProbe(), out _, FeetProbeHeight) : FindLadderColumn(BodyProbe(), out _));
+                // Holding Up / stick-up while overlapping a ladder (e.g. jumping onto it) grabs it.
+                bool up = input.y > 0.5f && FindLadderColumn(BodyProbe(), out _);
+                if (down || up) StartClimbing();
                 return;
             }
 
-            if (!bodyOnLadder && !ladderBelow) { StopClimbing(); return; }
-            if (Mathf.Abs(input.x) > 0.6f && Mathf.Abs(input.y) < 0.3f) { StopClimbing(); return; }
-            if (input.y < -0.5f && Physics2D.OverlapBox(pos + new Vector2(0f, -0.03f), new Vector2(0.55f, 0.08f), 0f, Layers.SolidMask) != null)
-                StopClimbing();
+            bool bodyOnLadder = Physics2D.OverlapBox(BodyProbe(), new Vector2(0.3f, 1.2f), 0f, Layers.LadderMask) != null;
+            bool ladderBelow = Physics2D.OverlapPoint(FeetProbe(), Layers.LadderMask) != null;
+            if (!bodyOnLadder && !ladderBelow) { StopClimbing(); return; }                           // climbed off the top
+            if (Mathf.Abs(input.x) > 0.6f && Mathf.Abs(input.y) < 0.3f) { StopClimbing(); return; }  // step off sideways
+            if (input.y < -0.5f)
+            {
+                // Reached the bottom: no more ladder under the feet and something to stand on
+                // (solid ground or a one-way ledge, which must become solid again right away).
+                bool ladderUnderFeet = Physics2D.OverlapPoint(pos + new Vector2(0f, -0.05f), Layers.LadderMask) != null;
+                bool standable = Physics2D.OverlapBox(pos + new Vector2(0f, -0.03f), new Vector2(0.55f, 0.08f), 0f, Layers.GroundMask) != null;
+                if (!ladderUnderFeet && standable)
+                {
+                    StopClimbing();
+                    dropThroughTimer = 0f;
+                    SetOneWayIgnored(false);
+                }
+            }
         }
 
         void StartClimbing()
         {
+            if (!FindLadderColumn(BodyProbe(), out float column) && !FindLadderColumn(FeetProbe(), out column, FeetProbeHeight)) return;
             IsClimbing = true;
+            pendingUpJump = -1f;
+            lastJumpPressedTime = -10f;
             SetOneWayIgnored(true);
             var p = rb.position;
-            p.x = Mathf.Floor(p.x) + 0.5f; // ladders are one tile wide on an integer grid
+            p.x = column;
             rb.position = p;
             rb.linearVelocity = Vector2.zero;
             rb.gravityScale = 0f;
@@ -265,13 +343,13 @@ namespace TileVania
                 Physics2D.IgnoreLayerCollision(Layers.Player, Layers.OneWay, ignored);
         }
 
-        void TryShoot()
+        void TryShoot(bool aimUp)
         {
             if (shootTimer > 0f || IsClimbing || projectilePrefab == null) return;
             shootTimer = shootCooldown;
             attackAnimTimer = 0.25f;
-            // Hold Up to shoot straight up (useful against flying enemies and the boss).
-            bool up = input.y > 0.5f;
+            // Up + X shoots straight up (useful against flying enemies and the boss).
+            bool up = aimUp;
             Vector2 dir = up ? Vector2.up : new Vector2(Facing, 0f);
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, up ? 1.2f : muzzleOffset.y);
             Vector2 spawn = up ? origin + Vector2.up * 0.5f : origin + new Vector2(muzzleOffset.x * Facing, 0f);

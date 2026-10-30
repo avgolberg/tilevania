@@ -2,6 +2,23 @@
 
 **Branch:** `modernization`. **Recovery point:** tag `pre-modernization` on `1921e3d`, the original course project. Nothing has been pushed. **Unity:** 6000.2.13f1, URP 2D, Input System. No new packages were added.
 
+## Iteration 2: controls and gameplay fixes
+
+| Issue | Root cause | Fix (survives Rebuild Game) |
+|---|---|---|
+| Could not climb down the Level 1 shaft ladder | **(1)** The hero passes wooden ledges by turning off Player↔OneWay collisions in the layer matrix. But `PlatformEffector2D` defaults to its own "collide with everything" mask (`useColliderMask = true`), so the matrix was ignored. On the shaft's ladder-top ledge, climbing started but the hero never moved. **Down + Jump drop-through was broken for the same reason.** **(2)** Grabbing from above tested a single point under the hero's centre, so standing slightly off-centre over the 1-tile shaft never grabbed it. | `LevelBuilder`: `useColliderMask = false`. `PlayerController`: ladder detection with 0.3-tile tolerance, evaluated at cell centres (no edge ambiguity), and snapping to the detected column. |
+| (found while testing) Climbing **down** a ladder that stands on a wooden ledge (Level 2 watchtower) fell through the ledge | The bottom-exit rule only recognised *solid* ground | Exit when no ladder is under the feet and *any* ground (solid or one-way) is. Ledge collision is restored immediately. |
+| Objects in Level 2 looked embedded in the floor | **Sorting, not transforms.** The castle floor's top lip (and the forest grass and flowers) was on the `Foreground` sorting layer, so it was drawn over the feet of everything standing on the floor. Spikes were half hidden. | The decor tilemap is now `SurfaceDecor` on the `Platforms` layer (behind all gameplay objects). |
+| Chest sprite bounds extended below the floor | **Transform/slicing:** the 48×48 chest frames have 12 transparent rows under the art | Chests are sliced to the art (48×24) with the pivot at the true bottom. |
+| Floating pickups could dip into ledges while bobbing | Placed at the cell centre regardless of sprite size or bob amplitude | `LevelBuilder.PickupPosition` computes the height from sprite bounds plus bob amplitude. |
+| Spiders could bob into the ceiling | Body placed at the layout cell, ignoring the 1-unit bob | Placement keeps the whole bob below the anchor. |
+| Two castle windows sat behind wooden ledges | A side effect of lowering ledges in iteration 1 | Windows moved up in the layout. |
+| "Found the Gold Key!" visible in every screenshot | **Screenshot capture artifact:** the capture tool deliberately injected that toast to show the HUD. The runtime lifecycle was fine: toasts fade after about 3 s, and each scene has its own HUD. | The capture tool no longer fakes a toast. A test now verifies fade-out and that nothing carries into the next scene. |
+
+**New controls:** see `GAME_DESIGN.md` §1. Arrow keys plus Z/Space/X/Esc, context-sensitive Up, no mouse in gameplay, gamepad kept.
+
+**Validation (iteration 2):** clean compile; validator 0 problems; **39/39 Play Mode tests pass**; reachability check OK; Windows build succeeded; regenerated screenshots reviewed.
+
 ## Completed
 
 | Area | Status |
@@ -26,7 +43,7 @@
 | C# compilation (batch mode) | ✅ 0 errors, 0 project warnings |
 | Full regeneration (`GameBuildPipeline.BuildAllBatch`) | ✅ Completes. The validator reports **0 problems**: no missing scripts or references, non-empty collider geometry, every `nextScene` in the build list, managers and EventSystem present in every scene |
 | Build settings | ✅ `MainMenu`, `Level1_Forest`, `Level2_Castle`, `Level3_TreasureChamber` (old course scenes removed from the build) |
-| **Automated Play Mode tests** (real scenes, simulated input) | ✅ **19 / 19 pass**: spawn and run, jump height and landing, ladder climb to a ledge, forward shot kills the slime, the skeleton dies from either side, upward shot, gem pickup, spikes cost exactly 1 heart, pit respawn, death panel and retry, gate blocks then opens with the key, **shots don't trigger the exit**, portal loads the castle, treasure door needs the right key, boss starts/dies/reveals the treasure/shows victory, **boss beaten with real projectiles in under 30 s of simulated play**, boss resets on retry, menu Play loads Level 1, all scenes run without logged errors |
+| **Automated Play Mode tests** (real scenes, simulated input) | ✅ **39 / 39 pass** (iteration 2 added controls, ladder, placement and toast tests). Iteration 1 tests: spawn and run, jump height and landing, ladder climb to a ledge, forward shot kills the slime, the skeleton dies from either side, upward shot, gem pickup, spikes cost exactly 1 heart, pit respawn, death panel and retry, gate blocks then opens with the key, **shots don't trigger the exit**, portal loads the castle, treasure door needs the right key, boss starts/dies/reveals the treasure/shows victory, **boss beaten with real projectiles in under 30 s of simulated play**, boss resets on retry, menu Play loads Level 1, all scenes run without logged errors |
 | Layout reachability (static solver) | ✅ Every key, gate, portal and treasure is reachable in order. It found, and I fixed, ledges and boss platforms that were 4–5 tiles high (the jump is 3.5) |
 | Windows standalone build | ✅ Succeeded (110 MB). A 10 s headless run of the built `.exe` logged no errors |
 | Visual review | ✅ Rendered screenshots of every area, the HUD, the pause menu, the boss bar and the victory panel were reviewed and fixed iteratively (`Docs/Screenshots/`) |

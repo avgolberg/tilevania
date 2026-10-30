@@ -106,6 +106,9 @@ namespace TileVania.EditorTools
                 comp.usedByEffector = true;
                 var eff = go.AddComponent<PlatformEffector2D>();
                 eff.useOneWay = true;
+                // Use the project's layer matrix (not the effector's own "everything" mask) so the player
+                // can pass through while climbing or dropping (Physics2D.IgnoreLayerCollision Player/OneWay).
+                eff.useColliderMask = false;
                 eff.surfaceArc = 160f;
                 eff.useSideFriction = false;
                 eff.useSideBounce = false;
@@ -130,7 +133,8 @@ namespace TileVania.EditorTools
             var ground = MakeTilemap(grid, "Ground", "Platforms", 0, Layers.Ground, Color.white);
             var oneWay = MakeTilemap(grid, "OneWay", "Platforms", 1, Layers.OneWay, Color.white);
             var ladder = MakeTilemap(grid, "Ladders", "Ladder", 0, Layers.Ladder, Color.white);
-            var front = MakeTilemap(grid, "FrontDecor", "Foreground", 0, Layers.Background, Color.white);
+            // Surface decor (castle floor lip, grass, flowers) sits on the ground but behind every gameplay object.
+            var front = MakeTilemap(grid, "SurfaceDecor", "Platforms", 2, Layers.Background, Color.white);
             AddSolidCollider(ground, false);
             AddSolidCollider(oneWay, true);
             var lc = ladder.gameObject.AddComponent<TilemapCollider2D>();
@@ -224,10 +228,10 @@ namespace TileVania.EditorTools
                     {
                         case 'P': spawn = feet; break;
                         case 'C': Place("Checkpoint", feet, "Checkpoints"); break;
-                        case 'g': Place(gemNames[gemIndex++ % gemNames.Length], c, "Pickups"); break;
-                        case 'h': Place("Pickup_Heart", c, "Pickups"); break;
-                        case 'k': Place("Key_Gold", c, "Pickups"); break;
-                        case 'K': Place("Key_Treasure", c, "Pickups"); break;
+                        case 'g': { var n = gemNames[gemIndex++ % gemNames.Length]; Place(n, PickupPosition(n, x, y), "Pickups"); break; }
+                        case 'h': Place("Pickup_Heart", PickupPosition("Pickup_Heart", x, y), "Pickups"); break;
+                        case 'k': Place("Key_Gold", PickupPosition("Key_Gold", x, y), "Pickups"); break;
+                        case 'K': Place("Key_Treasure", PickupPosition("Key_Treasure", x, y), "Pickups"); break;
                         case 'L': Place("Gate_Gold", new Vector2(x, y), "Gates"); break;
                         case 'D': Place("Gate_Treasure", new Vector2(x, y), "Gates"); break;
                         case 'c': Place("Chest_Iron", feet, "Chests"); break;
@@ -242,7 +246,11 @@ namespace TileVania.EditorTools
                             int top = y + 1;
                             while (top < L.h && !L.Solid(x, top) && !L.OneWay(x, top)) top++;
                             var sp = Place("Enemy_Spider", new Vector2(x + 0.5f, top), "Enemies");
-                            sp.transform.Find("Body").localPosition = new Vector3(0f, c.y - top, 0f);
+                            // Keep the whole bob below the ceiling it hangs from.
+                            var body = sp.transform.Find("Body");
+                            var bodySr = body.GetComponentInChildren<SpriteRenderer>();
+                            float reach = bodySr.sprite.bounds.max.y + Mathf.Abs(body.GetComponent<Bobbing>().amplitude.y) + 0.1f;
+                            body.localPosition = new Vector3(0f, Mathf.Min(c.y - top, -reach), 0f);
                             break;
                         }
                         case '^':
@@ -361,6 +369,20 @@ namespace TileVania.EditorTools
             ContentBuilder.EnsureFolder(Scenes);
             EditorSceneManager.SaveScene(scene, $"{Scenes}/{spec.scene}.unity");
             AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// Floating pickups bob; place them so the lowest point of the bob stays a little above the cell's floor.
+        /// </summary>
+        static Vector2 PickupPosition(string prefab, int x, int y)
+        {
+            var go = ContentBuilder.LoadPrefab(prefab);
+            var sr = go.GetComponentInChildren<SpriteRenderer>();
+            var bob = go.GetComponentInChildren<Bobbing>();
+            float bobAmp = bob != null ? Mathf.Abs(bob.amplitude.y) : 0f;
+            float bottom = sr.sprite.bounds.min.y * sr.transform.lossyScale.y + sr.transform.localPosition.y;
+            const float clearance = 0.08f;
+            return new Vector2(x + 0.5f, y + clearance + bobAmp - bottom);
         }
 
         static bool HasRoof(Layout L, int x, int y)

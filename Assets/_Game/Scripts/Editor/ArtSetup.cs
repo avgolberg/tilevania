@@ -118,8 +118,10 @@ namespace TileVania.EditorTools
                 new Slice("Gem_Blue", 32, 160, 16, 16, Center), new Slice("Gem_Orange", 48, 160, 16, 16, Center),
             });
             foreach (var k in new[] { "03", "05", "02" }) Single($"Items/Key_{k}.png", 28, Center);
+            // Chest frames are 48x48 but the art only uses rows 12..36; crop so the sprite's bottom is the chest's bottom.
             foreach (var c in new[] { "Iron", "Silver", "Gold" })
-                Strip($"Items/Chest_{c}.png", "Chest_" + c, 48, 48, 3, 16, new Vector2(18.5f / 48f, 12f / 48f));
+                Sheet($"Items/Chest_{c}.png", 16, Enumerable.Range(0, 3)
+                    .Select(i => new Slice($"Chest_{c}_{i}", i * 48, 12, 48, 24, new Vector2(18.5f / 48f, 0f))).ToArray());
 
             // Portals
             Strip("Portals/Portal_Loop.png", "PortalLoop", 32, 32, 5, 16, BottomCenter);

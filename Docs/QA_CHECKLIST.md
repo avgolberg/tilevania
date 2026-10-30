@@ -1,6 +1,6 @@
 # QA Checklist (manual play-through)
 
-Automated coverage: 19 Play Mode tests (`Assets/_Game/Tests/PlayMode/GameplayTests.cs`). Run them via **Window → General → Test Runner → PlayMode → Run All**. The items below are the things automation cannot judge: feel, readability, audio and visuals. Tick them while playing at 1920×1080 (Game view "Full HD"), then at one other resolution.
+Automated coverage: 39 Play Mode tests (`Assets/_Game/Tests/PlayMode/`: `GameplayTests.cs`, `ControlsAndLadderTests.cs`). Run them via **Window → General → Test Runner → PlayMode → Run All**. The items below are the things automation cannot judge: feel, readability, audio and visuals. Tick them while playing at 1920×1080 (Game view "Full HD"), then at one other resolution.
 
 ## Setup
 - [ ] Open `Assets/_Game/Scenes/MainMenu.unity` and press Play (or play the build in `Builds/Windows/`).
@@ -8,19 +8,32 @@ Automated coverage: 19 Play Mode tests (`Assets/_Game/Tests/PlayMode/GameplayTes
 
 ## Main menu
 - [ ] Music starts (*Perilous Dungeon*). The title, subtitle, diorama, hint line and four buttons are visible.
-- [ ] Arrow keys/WASD move between buttons, with a highlight and a select sound; Enter activates.
+- [ ] Arrow keys move between buttons, with a highlight and a select sound; Enter activates.
 - [ ] The mouse hover highlight works, and clicking works.
 - [ ] **Settings:** both sliders change volume immediately, and the values persist after restarting Play Mode.
 - [ ] **Credits:** the text fits inside the panel and Back returns to the menu.
 - [ ] **Quit** stops Play Mode (in a build, the app closes).
 - [ ] **Play** fades to black, then into Level 1.
 
+## Controls (keyboard only, no mouse)
+- [ ] ← / → move; ↑, Z and Space each jump; X shoots; Esc pauses. The mouse does nothing in gameplay.
+- [ ] ↑ + X (pressed together) fires upward **without** jumping, both standing still and while running.
+- [ ] ↑ next to a ladder climbs it instead of jumping. ↑ away from ladders jumps.
+- [ ] ↓ + Z on a wooden ledge drops through it. ↓ alone does not.
+- [ ] Gamepad (if available): stick moves and climbs, South jumps, West shoots, stick-up + West shoots up.
+
+## Ladders (both directions)
+- [ ] Level 1: standing on top of the shaft into the underground (x≈78), ↓ climbs down into the cave, even when not perfectly centred.
+- [ ] Stopping midway holds position; ↑ climbs back out at the top onto the ground.
+- [ ] Level 1 ruins ladder (x≈45): up onto the key ledge and back down.
+- [ ] Level 2 watchtower: climbing **down** the upper ladder stops on the wooden floor at its foot (no falling through).
+- [ ] ↓ next to (not on) a ladder foot does not snap you onto it.
+
 ## Player feel (Level 1 meadow)
 - [ ] Running starts and stops crisply, with no sliding or sticking to walls.
 - [ ] A tap-jump is short and a held jump is high (about 3.5 tiles). You can still jump just after leaving a ledge (coyote time), and a jump pressed just before landing still fires (buffer).
 - [ ] Landing makes dust, a squash and a thud sound. Jumping makes dust and a stretch.
 - [ ] Facing always matches movement. Shots leave from the side you face, never from inside the hero.
-- [ ] Holding Up + Shoot fires straight up.
 - [ ] Shooting point-blank into a wall makes a spark, and no projectile passes through.
 - [ ] The camera follows smoothly with look-ahead, never shows outside the level, and pixels stay crisp.
 
@@ -35,8 +48,6 @@ Automated coverage: 19 Play Mode tests (`Assets/_Game/Tests/PlayMode/GameplayTes
 
 ## Level 1 progression
 - [ ] Checkpoint pillars light a flame with a glow, play a sound, show "Checkpoint", and refill hearts.
-- [ ] Ladder: Up grabs it and you climb to the top ledge. Down from the ledge climbs back down. Jump leaps off.
-- [ ] Down + Jump drops through a wooden ledge.
 - [ ] The Gold Key pickup shows a toast and a HUD key icon.
 - [ ] In the cave: the spider bobs on its thread; the iron chest opens with an animation, and gems fly to you.
 - [ ] The gate without the key shows a "Locked" toast and sound. With the key it rises and fades, and the HUD key icon disappears.

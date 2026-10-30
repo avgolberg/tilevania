@@ -310,8 +310,10 @@ namespace TileVania.EditorTools
             controller.settingsPanel.SetActive(false);
             controller.creditsPanel.SetActive(false);
 
-            Label(canvas, "Hint", "Move: A/D or Arrows   Jump: Space   Shoot: J / X / Left Click   Climb: W/S   Pause: Esc",
-                24, Text * new Color(1, 1, 1, 0.7f), new Vector2(0.5f, 0f), new Vector2(0, 30), new Vector2(1800, 40));
+            Label(canvas, "Hint",
+                "Move: Left / Right    Jump: Up, Z or Space    Ladders: Up / Down    Shoot: X    Shoot up: Up + X\n" +
+                "Drop through ledge: Down + Z    Pause: Esc    Menus: arrows + Enter",
+                24, Text * new Color(1, 1, 1, 0.75f), new Vector2(0.5f, 0f), new Vector2(0, 24), new Vector2(1800, 70));
         }
     }
 }

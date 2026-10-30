@@ -266,9 +266,9 @@ namespace TileVania.EditorTools
         {
             var hud = Object.FindFirstObjectByType<HUD>();
             hud.titleGroup.alpha = 0f;
-            hud.messageGroup.alpha = 1f;
-            hud.messageText.text = "Found the Gold Key! It opens a locked gate.";
-            hud.goldKeyIcon.SetActive(true);
+            // Show the HUD as it looks during normal play: no toast, no keys held.
+            hud.messageGroup.alpha = 0f;
+            hud.goldKeyIcon.SetActive(false);
             hud.treasureKeyIcon.SetActive(false);
             hud.gemText.text = "12";
         }

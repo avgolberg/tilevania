@@ -124,6 +124,7 @@ MonoBehaviour:
   maxFallSpeed: 22
   coyoteTime: 0.1
   jumpBufferTime: 0.12
+  upJumpGrace: 0.09
   climbSpeed: 4.5
   projectilePrefab: {fileID: 4072970179260069566, guid: f729ac08a7012c446be2020cef0a540b, type: 3}
   shootCooldown: 0.3

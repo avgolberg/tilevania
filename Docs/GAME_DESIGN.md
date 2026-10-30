@@ -7,22 +7,23 @@ There is no looping between levels. Progression uses explicit scene names, not b
 
 ---
 
-## 1. Controls (keyboard first, gamepad bindings included)
+## 1. Controls (keyboard-only, no mouse needed; gamepad supported)
 
 | Action | Keyboard | Gamepad |
 |---|---|---|
-| Move | A / D or ← / → | Left stick / D-pad |
-| Climb ladder | W / S or ↑ / ↓ | Stick up/down |
-| Jump | Space (or K) | South button |
-| Shoot | J, X, Left Ctrl, or Left Mouse | West button |
-| Shoot upward | Hold Up + Shoot | Up + West |
-| Drop through a wooden ledge | Down + Jump | Down + South |
-| Pause | Esc (or P) | Start |
-| Menus | Arrows/WASD + Enter/Space, or mouse | Stick + South |
+| Move | ← / → | Left stick / D-pad |
+| Jump | **↑**, or **Z** / **Space** | South button |
+| Climb a ladder | **↑** near a ladder climbs (instead of jumping); **↓** climbs down, including from the top of a ladder | Stick / D-pad up / down |
+| Shoot forward | **X** | West button |
+| Shoot upward | **↑ + X**, pressed together; it does not jump | Stick up + West |
+| Drop through a wooden ledge | **↓ + Z** (or ↓ + Space) | Down + South |
+| Jump off a ladder | Z / Space (← / → steps off) | South |
+| Pause | Esc | Start |
+| Menus | Arrow keys + Enter (mouse optional) | Stick + South |
 
-Input is defined in code (`GameInput.cs`) on top of the new Input System, so no scene wiring is needed. UI uses `InputSystemUIInputModule` with its default actions.
+**How Up is resolved.** On a ladder, ↑ climbs. Elsewhere, ↑ jumps after a 0.09 s grace window. If X is pressed inside that window, the jump is cancelled and the shot goes upward. Z and Space jump instantly, and holding any jump key (including ↑) gives the full jump height. Jump buffering and coyote time apply to every jump key; coyote time is measured from the moment the key was pressed, so the grace window never eats it. Input is defined in code (`GameInput.cs`) on the new Input System.
 
----
+**Ladders.** You can grab a ladder when the hero's centre is within 0.3 tiles of its column; the hero then snaps onto it. You can stop anywhere on the ladder. Reaching the bottom (solid ground or a wooden ledge) steps you off. Climbing past the top puts you on the ledge above.
 
 ## 2. Player
 
@@ -30,9 +31,9 @@ Input is defined in code (`GameInput.cs`) on top of the new Input System, so no 
 |---|---|
 | Run | Acceleration-based: max 7.5 u/s, ground accel 90, decel 100, air accel 55 |
 | Jump | 16.5 u/s launch, gravity scale 4 → apex ≈ **3.5 tiles**. 0.1 s coyote time, 0.12 s jump buffer, variable height (release early to cut), 1.6× fall gravity, max fall 22 u/s |
-| Ladders | Press Up/Down on a ladder to grab. The player snaps to the ladder's centre, gravity is off, and climb speed is 4.5 u/s. Jump to leap off; walk sideways to let go. Ladders pass through wooden ledges (`I` tiles). |
-| One-way ledges | Jump up through them; Down + Jump drops through. |
-| Shooting | A sword-energy slash projectile (16 u/s, ≈14-tile range, 0.3 s cooldown). It spawns in front of the hero at waist height (or above the head with Up) and never inside a wall: point-blank against a wall it shows only a spark. |
+| Ladders | ↑ near a ladder or ↓ above it grabs it (0.3-tile tolerance), and the hero snaps to the ladder's centre. Climb speed is 4.5 u/s with gravity off; the hero stops when you release. Z/Space leaps off, ← / → steps off. Ladders pass through wooden ledges (`I` tiles). |
+| One-way ledges | Jump up through them; ↓ + Z drops through. |
+| Shooting | X fires a sword-energy slash projectile (16 u/s, ≈14-tile range, 0.3 s cooldown). It spawns in front of the hero at waist height (or above the head with ↑ + X) and never inside a wall: point-blank against a wall it shows only a spark. |
 | Facing | Driven by horizontal input only. The sprite flips on the child `Visual` transform, so colliders are never mirrored. |
 | Health | 3 hearts. A hit costs 1 heart, knocks the hero back, and gives 1.2 s of blinking invulnerability. |
 | Death | Brief freeze, then a hop and spinning fall with a red fade, then the **"You Fell"** panel: *Retry from Checkpoint* (full hearts) or *Main Menu*. |
@@ -153,7 +154,7 @@ Assets/_Game/
   Resources/      SfxLibrary.asset
   Scripts/Runtime TileVania.Runtime.asmdef — Core, Player, Combat, Enemies, Items, Level, UI, Boss
   Scripts/Editor  TileVania.Editor.asmdef — ArtSetup, GeneratedArt, ContentBuilder, UIBuilder, LevelBuilder, GameBuildPipeline
-  Tests/PlayMode  TileVania.Tests.PlayMode.asmdef — GameplayTests (19 end-to-end tests)
+  Tests/PlayMode  TileVania.Tests.PlayMode.asmdef — GameplayTests + ControlsAndLadderTests (39 end-to-end tests)
 Assets/_Legacy/   original course project (not in build; contains course-restricted art)
 ```
 
