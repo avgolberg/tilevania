@@ -69,6 +69,27 @@ namespace TileVania.EditorTools
             }
         }
 
+        /// <summary>Builds a Windows player into Builds/Windows (git-ignored) to verify the game builds.</summary>
+        [MenuItem("Tools/TileVania/Build Windows Player")]
+        public static void BuildWindowsPlayer()
+        {
+            var options = new BuildPlayerOptions
+            {
+                scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
+                locationPathName = "Builds/Windows/TileVania.exe",
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None,
+            };
+            var report = BuildPipeline.BuildPlayer(options);
+            Debug.Log($"[TileVania] Player build: {report.summary.result}, errors={report.summary.totalErrors}, size={report.summary.totalSize / (1024 * 1024)} MB");
+        }
+
+        public static void BuildWindowsPlayerBatch()
+        {
+            BuildWindowsPlayer();
+            EditorApplication.Exit(0);
+        }
+
         public static void ValidateBatch()
         {
             Debug.Log("[TileVania] " + Validate());
