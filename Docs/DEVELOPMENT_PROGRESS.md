@@ -1,6 +1,6 @@
 # Development Progress
 
-**Branch:** `modernization`. **Recovery point:** tag `pre-modernization` on `1921e3d`, the original course project. Pushed to `origin` (GitHub) on 2026-10-30, with `main` fast-forwarded to `modernization`. **Unity:** 6000.2.13f1, URP 2D, Input System. No new packages were added.
+**Branch:** `modernization`. **Recovery point:** tag `pre-modernization` on `1921e3d`, the original course project. Published on GitHub (`avgolberg/tilevania`): `modernization` is pushed and `main` is fast-forwarded to it (no force-push). **Unity:** 6000.2.13f1, URP 2D, Input System. No new packages were added.
 
 ## Iteration 2: controls and gameplay fixes
 
